@@ -1,0 +1,58 @@
+/* KitchenTimer.css */
+.kitchen-timer {
+  text-align: center;
+  font-family: Arial, sans-serif;
+  border: 2px solid black;
+  border-radius: 10px;
+  padding: 20px;
+  width: 300px;
+  margin: 20px auto;
+  color: #777;
+}
+
+.time-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  font-family: "Digital-7", monospace;
+}
+
+.time-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 10px;
+}
+
+.button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin: 0 5px; /* Add horizontal spacing between buttons */
+}
+
+.start-stop-button {
+  margin: 20px 10px; /* Add spacing around the start/stop button */
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.clear-button {
+  margin: 10px 10px; /* Add spacing around the clear button */
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+
+.current-state {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  color: #555;
+}

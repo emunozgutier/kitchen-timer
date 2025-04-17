@@ -1,156 +1,131 @@
 import React, { useEffect } from 'react';
 import { useAtom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
+import './KitchenTimer.css';
+import alarmSoundFile from './assets/alarm-clock-01.mp3';
+
+const States = {
+  IDLE_ZERO: 'idle_zero',
+  COUNTING_DOWN: 'counting_down',
+  COUNTING_UP: 'counting_up',
+  COUNT_DOWN_PAUSED: 'count_down_paused',
+  COUNT_UP_PAUSED: 'count_up_paused',
+  FINISH_ALARM: 'finish_alarm',
+};
 
 const timeAtom = atomWithStorage('time', 0);
-const isRunningAtom = atomWithStorage('isRunning', false);
-const isCountingDownAtom = atomWithStorage('isCountingDown', false);
+const currentStateAtom = atomWithStorage('currentState', States.IDLE_ZERO);
 
 const KitchenTimer = () => {
-    const [time, setTime] = useAtom(timeAtom);
-    const [isRunning, setIsRunning] = useAtom(isRunningAtom);
-    const [isCountingDown, setIsCountingDown] = useAtom(isCountingDownAtom);
+  const [time, setTime] = useAtom(timeAtom);
+  const [currentState, setCurrentState] = useAtom(currentStateAtom);
 
-    const alarmSound = new Audio('https://www.soundjay.com/button/beep-07.wav'); // Free alarm sound
-    const tickSound = new Audio('https://www.soundjay.com/clock/clock-ticking-1.mp3'); // Free ticking sound
+  useEffect(() => {
+    const minutes = String(Math.floor(time / 60)).padStart(2, '0');
+    const seconds = String(time % 60).padStart(2, '0');
+    document.title = `${minutes}:${seconds}`;
+  }, [time]);
 
-    useEffect(() => {
-        const minutes = String(Math.floor(time / 60)).padStart(2, '0');
-        const seconds = String(time % 60).padStart(2, '0');
-        document.title = `${minutes}:${seconds}`;
-    }, [time]);
+  useEffect(() => {
+    let timer = null;
 
-    useEffect(() => {
-        let timer = null;
+    if (currentState === States.COUNTING_DOWN || currentState === States.COUNTING_UP) {
+      timer = setInterval(() => {
+        setTime((prevTime) => {
+          if (currentState === States.COUNTING_DOWN) {
+            if (prevTime <= 0) {
+              clearInterval(timer);
+              setCurrentState(States.FINISH_ALARM);
+              playAudio(alarmSoundFile, 3000);
+              return 0;
+            }
+            return prevTime - 1;
+          } else if (currentState === States.COUNTING_UP) {
+            return prevTime + 1;
+          }
+          return prevTime;
+        });
+      }, 1000);
+    }
 
-        if (isRunning) {
-            timer = setInterval(() => {
-                setTime((prevTime) => {
-                    if (isCountingDown) {
-                        if (prevTime <= 0) {
-                            clearInterval(timer);
-                            setIsRunning(false);
-                            alarmSound.play();
-                            setTimeout(() => alarmSound.pause(), 3000); // Stop sound after 3 seconds
-                            return 0;
-                        }
-                        return prevTime - 1;
-                    } else {
-                        return prevTime + 1;
-                    }
-                });
-            }, 1000);
-        }
-
-        return () => {
-            if (timer) clearInterval(timer);
-        };
-    }, [isRunning, isCountingDown, setTime, setIsRunning, alarmSound]);
-
-    useEffect(() => {
-        if (time > 0 && time % (5 * 60) === 0) {
-            tickSound.play();
-        }
-    }, [time, tickSound]);
-
-    const incrementMinutes = () => setTime((prev) => prev + 60);
-    const decrementMinutes = () => setTime((prev) => Math.max(prev - 60, 0));
-    const incrementSeconds = () => setTime((prev) => prev + 1);
-    const decrementSeconds = () => setTime((prev) => Math.max(prev - 1, 0));
-
-    const handleScroll = (e, isMinutes) => {
-        if (isMinutes) {
-            e.deltaY < 0 ? incrementMinutes() : decrementMinutes();
-        } else {
-            e.deltaY < 0 ? incrementSeconds() : decrementSeconds();
-        }
+    return () => {
+      if (timer) clearInterval(timer);
     };
+  }, [currentState, setTime]);
 
-    const toggleTimer = () => {
-        if (!isRunning) {
-            setIsCountingDown(time > 0);
-        }
-        setIsRunning((prev) => !prev);
-    };
 
-    const clearTimer = () => {
-        setIsRunning(false);
-        setTime(0);
-    };
+  useEffect(() => {
+    if (currentState === States.FINISH_ALARM) {
+      playAudio(alarmSoundFile, 3000);
+    }
+  }, [currentState]);
 
-    const minutes = Math.floor(time / 60);
-    const seconds = time % 60;
+  const playAudio = (audioFile, duration) => {
+    const audio = new Audio(audioFile);
+    audio.play();
+    setTimeout(() => {
+      audio.pause();
+      audio.currentTime = 0;
+    }, duration);
+  };
 
-    const styles = {
-        kitchenTimer: {
-            textAlign: 'center',
-            fontFamily: 'Arial, sans-serif',
-            border: '2px solid black',
-            borderRadius: '10px',
-            padding: '20px',
-            width: '300px',
-            margin: '20px auto',
-        },
-        timeDisplay: {
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            fontSize: '2rem',
-            fontFamily: '"Digital-7", monospace',
-        },
-        timeSection: {
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            margin: '0 10px',
-        },
-        button: {
-            background: 'none',
-            border: 'none',
-            fontSize: '1.5rem',
-            cursor: 'pointer',
-        },
-        startStopButton: {
-            marginTop: '20px',
-            padding: '10px 20px',
-            fontSize: '1rem',
-            cursor: 'pointer',
-        },
-        clearButton: {
-            marginTop: '10px',
-            padding: '10px 20px',
-            fontSize: '1rem',
-            cursor: 'pointer',
-            backgroundColor: 'red',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-        },
-    };
+  const incrementMinutes = () => setTime((prev) => prev + 60);
+  const decrementMinutes = () => setTime((prev) => Math.max(prev - 60, 0));
+  const incrementSeconds = () => setTime((prev) => prev + 1);
+  const decrementSeconds = () => setTime((prev) => Math.max(prev - 1, 0));
 
-    return (
-        <div style={styles.kitchenTimer}>
-            <div style={styles.timeDisplay}>
-                <div style={styles.timeSection} onWheel={(e) => handleScroll(e, true)}>
-                    <button style={styles.button} onClick={incrementMinutes}>▲</button>
-                    <span>{String(minutes).padStart(2, '0')}</span>
-                    <button style={styles.button} onClick={decrementMinutes}>▼</button>
-                </div>
-                <span>:</span>
-                <div style={styles.timeSection} onWheel={(e) => handleScroll(e, false)}>
-                    <button style={styles.button} onClick={incrementSeconds}>▲</button>
-                    <span>{String(seconds).padStart(2, '0')}</span>
-                    <button style={styles.button} onClick={decrementSeconds}>▼</button>
-                </div>
-            </div>
-            <button style={styles.startStopButton} onClick={toggleTimer}>
-                {isRunning ? 'Stop' : 'Start'}
-            </button>
-            <button style={styles.clearButton} onClick={clearTimer}>
-                Clear
-            </button>
+  const handleScroll = (e, isMinutes) => {
+    if (isMinutes) {
+      e.deltaY < 0 ? incrementMinutes() : decrementMinutes();
+    } else {
+      e.deltaY < 0 ? incrementSeconds() : decrementSeconds();
+    }
+  };
+
+  const toggleTimer = () => {
+    if ([States.IDLE_ZERO, States.COUNT_DOWN_PAUSED, States.COUNT_UP_PAUSED].includes(currentState)) {
+      setCurrentState(time > 0 ? States.COUNTING_DOWN : States.COUNTING_UP);
+    } else if (currentState === States.COUNTING_DOWN) {
+      setCurrentState(States.COUNT_DOWN_PAUSED);
+    } else if (currentState === States.COUNTING_UP) {
+      setCurrentState(States.COUNT_UP_PAUSED);
+    }
+  };
+
+  const clearTimer = () => {
+    setCurrentState(States.IDLE_ZERO);
+    setTime(0);
+  };
+
+  const minutes = Math.floor(time / 60);
+  const seconds = time % 60;
+
+  return (
+    <div className="kitchen-timer">
+      <div className="time-display">
+        <div className="time-section" onWheel={(e) => handleScroll(e, true)}>
+          <button className="button" onClick={incrementMinutes}>▲</button>
+          <span>{String(minutes).padStart(2, '0')}</span>
+          <button className="button" onClick={decrementMinutes}>▼</button>
         </div>
-    );
+        <span>:</span>
+        <div className="time-section" onWheel={(e) => handleScroll(e, false)}>
+          <button className="button" onClick={incrementSeconds}>▲</button>
+          <span>{String(seconds).padStart(2, '0')}</span>
+          <button className="button" onClick={decrementSeconds}>▼</button>
+        </div>
+      </div>
+      <div className="current-state">
+        Current State: <strong>{currentState.replace('_', ' ').toUpperCase()}</strong>
+      </div>
+      <button className="start-stop-button" onClick={toggleTimer}>
+        {currentState === States.COUNTING_DOWN || currentState === States.COUNTING_UP ? 'Pause' : 'Start'}
+      </button>
+      <button className="clear-button" onClick={clearTimer}>
+        Clear
+      </button>
+    </div>
+  );
 };
 
 export default KitchenTimer;
