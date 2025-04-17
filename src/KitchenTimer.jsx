@@ -15,6 +15,12 @@ const KitchenTimer = () => {
     const tickSound = new Audio('https://www.soundjay.com/clock/clock-ticking-1.mp3'); // Free ticking sound
 
     useEffect(() => {
+        const minutes = String(Math.floor(time / 60)).padStart(2, '0');
+        const seconds = String(time % 60).padStart(2, '0');
+        document.title = `${minutes}:${seconds}`;
+    }, [time]);
+
+    useEffect(() => {
         let timer = null;
 
         if (isRunning) {
