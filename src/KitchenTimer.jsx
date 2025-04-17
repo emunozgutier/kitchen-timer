@@ -11,6 +11,9 @@ const KitchenTimer = () => {
     const [isRunning, setIsRunning] = useAtom(isRunningAtom);
     const [isCountingDown, setIsCountingDown] = useAtom(isCountingDownAtom);
 
+    const alarmSound = new Audio('https://www.soundjay.com/button/beep-07.wav'); // Free alarm sound
+    const tickSound = new Audio('https://www.soundjay.com/clock/clock-ticking-1.mp3'); // Free ticking sound
+
     useEffect(() => {
         let timer = null;
 
@@ -21,7 +24,8 @@ const KitchenTimer = () => {
                         if (prevTime <= 0) {
                             clearInterval(timer);
                             setIsRunning(false);
-                            alert('Time is up!');
+                            alarmSound.play();
+                            setTimeout(() => alarmSound.pause(), 3000); // Stop sound after 3 seconds
                             return 0;
                         }
                         return prevTime - 1;
@@ -35,7 +39,13 @@ const KitchenTimer = () => {
         return () => {
             if (timer) clearInterval(timer);
         };
-    }, [isRunning, isCountingDown, setTime, setIsRunning]);
+    }, [isRunning, isCountingDown, setTime, setIsRunning, alarmSound]);
+
+    useEffect(() => {
+        if (time > 0 && time % (5 * 60) === 0) {
+            tickSound.play();
+        }
+    }, [time, tickSound]);
 
     const incrementMinutes = () => setTime((prev) => prev + 60);
     const decrementMinutes = () => setTime((prev) => Math.max(prev - 60, 0));
@@ -55,6 +65,11 @@ const KitchenTimer = () => {
             setIsCountingDown(time > 0);
         }
         setIsRunning((prev) => !prev);
+    };
+
+    const clearTimer = () => {
+        setIsRunning(false);
+        setTime(0);
     };
 
     const minutes = Math.floor(time / 60);
@@ -95,6 +110,16 @@ const KitchenTimer = () => {
             fontSize: '1rem',
             cursor: 'pointer',
         },
+        clearButton: {
+            marginTop: '10px',
+            padding: '10px 20px',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            backgroundColor: 'red',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+        },
     };
 
     return (
@@ -114,6 +139,9 @@ const KitchenTimer = () => {
             </div>
             <button style={styles.startStopButton} onClick={toggleTimer}>
                 {isRunning ? 'Stop' : 'Start'}
+            </button>
+            <button style={styles.clearButton} onClick={clearTimer}>
+                Clear
             </button>
         </div>
     );
